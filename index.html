@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+</head>
+<body>
+	<input type='button' id='test' onclick='play()' value='音频' />
+	<label for='sound'>音量调节：</label>
+	<input type='range' id='sound' name='sound'  max='1' min='0.01' step='0.01' />
+	<input type='button' value='录制' onclick='setRecord(this)' />
+	<table class='pinao'>
+		<tr class='head'>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr class='body'>
+			<td></td>
+			<td></td>
+			<td style='visibility: hidden'></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td style='visibility: hidden'></td>
+			<td></td>
+			<td></td>
+			<td style='visibility: hidden'></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td style='visibility: hidden'></td>
+			<td></td>
+			<td></td>
+			<td style='visibility: hidden'></td>
+			<td></td>
+			<td></td>
+
+		</tr>
+	</table>
+
+	<script>
+		var recordArray = [];
+		var isReaord = false;
+
+		window.AudioContext = window.AudioContext || window.webkitAudioContext;
+		var audioCtx = new AudioContext();
+		var arrFrequency = [196.00, 220.00, 246.94, 261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25, 587.33, 659.25, 698.46, 783.99, 880.00, 987.77, 1046.50,1064.80];
+		var index = 0;
+		var dir = 1;
+
+
+		function play(arrayIndex){
+			if(arrayIndex){
+				index = arrayIndex;
+			}
+			var oscillator = audioCtx.createOscillator();
+			var gainNode = audioCtx.createGain();
+			oscillator.connect(gainNode);
+			gainNode.connect(audioCtx.destination);
+			oscillator.type = 'triangle';//'square','triangle','sawtooth','sine'
+
+			index += dir;
+			var fre = arrFrequency[index];
+			if(!fre){
+				dir = 0-dir;
+				index += dir;
+				fre = arrFrequency[index];
+			}
+
+			oscillator.frequency.value = fre;
+			gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+			var volume = document.querySelector('#sound').value;
+			gainNode.gain.linearRampToValueAtTime(volume, audioCtx.currentTime + 0.01);
+			oscillator.start(audioCtx.currentTime);
+			gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1);
+			oscillator.stop(audioCtx.currentTime + 1);
+		}
+		function autoPlay(playIndex){
+			var oscillator = audioCtx.createOscillator();
+			var gainNode = audioCtx.createGain();
+			oscillator.connect(gainNode);
+			gainNode.connect(audioCtx.destination);
+			oscillator.type = 'triangle';//'square','triangle','sawtooth','sine'
+			oscillator.frequency.value = recordArray[playIndex];
+			gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+			var volume = document.querySelector('#sound').value;
+			gainNode.gain.linearRampToValueAtTime(volume, audioCtx.currentTime + 0.01);
+			oscillator.start(audioCtx.currentTime);
+			gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1);
+			oscillator.stop(audioCtx.currentTime + 1);
+
+			if(recordArray[playIndex +1]){
+				setTimeout(autoPlay,300,playIndex +1);
+			}
+		}
+		var whiteBtn = document.querySelector('.head');
+		whiteBtn.addEventListener('click',function(e){
+			play(e.target.cellIndex);
+			
+			if(isReaord){
+				record(arrFrequency[e.target.cellIndex])
+			}
+		});
+		whiteBtn.addEventListener('mousedown',function(e){
+			e.target.style.left ='1px';
+			e.target.style['box-shadow'] = '0px 0px 0px ';
+		});
+		whiteBtn.addEventListener('mouseup',function(e){
+			document.querySelectorAll('td').forEach(function(tdObj){
+				tdObj.style.left = '0px';
+				tdObj.style['box-shadow'] = '4px 4px 2px #f2d6d6';
+			});
+		})
+		function setRecord(obj){
+			if(obj.value == '录制'){
+				isReaord = true;
+				obj.value = '播放';
+				recordArray = [];
+			}else{
+				isReaord = false;
+				obj.value = '录制';
+				if(recordArray.length){
+					autoPlay(0);
+				}
+			}
+		}
+		function  record(val){
+			recordArray.push(val);
+		}
+
+	</script>
+
+	<style>
+		.pinao{
+			
+			width:1000px;
+		}
+
+		.pinao .head td{
+			width:12px ;
+			border:solid 1px black;
+			height:230px;
+			background-color:white;
+			cursor: pointer;
+			position:relative;
+			box-shadow: 4px 4px 2px #f2d6d6;
+		}
+		.pinao .body {
+			
+			position:relative;
+			top:-236px;
+			left:24px;
+			width:120px;
+		}
+		.pinao .body td{
+			width:8px ;
+			border:solid 1px black;
+			height:140px;
+			background-color:black;
+			box-shadow: 4px 4px 2px #f2d6d6;
+		}
+	</style>
+</body>
+</html>
